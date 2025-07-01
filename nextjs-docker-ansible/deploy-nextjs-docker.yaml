@@ -1,0 +1,50 @@
+---
+- name: Build and run Next.js app in Docker
+  hosts: docker
+  become: true
+  vars:
+    app_name: nextjs-app
+    app_path: /opt/docker
+    image_name: nextjs-app-image
+    container_name: nextjs-app-container
+    exposed_port: 3000
+
+  tasks:
+
+    - name: Ensure Docker is installed
+      apt:
+        name: docker.io
+        state: present
+        update_cache: true
+      when: ansible_os_family == "Debian"
+
+    - name: Ensure Docker service is running
+      systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Build Docker image for Next.js app
+      community.docker.docker_image:
+        name: "{{ image_name }}"
+        build:
+          path: "{{ app_path }}"
+        source: build
+      register: build_result
+
+    - name: Stop existing container (if any)
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: absent
+      ignore_errors: true
+
+    - name: Run Next.js app container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}"
+        restart_policy: always
+        state: started
+        ports:
+          - "3000:{{ exposed_port }}"
+        working_dir: /app
+        command: ["npm", "run", "start"]
