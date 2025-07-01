@@ -15,7 +15,7 @@
       apt:
         name: docker.io
         state: present
-        update_cache: true
+        update_cache: yes
       when: ansible_os_family == "Debian"
 
     - name: Ensure Docker service is running
@@ -24,15 +24,22 @@
         state: started
         enabled: true
 
+    - name: Install community.docker collection if missing
+      ansible.builtin.meta: require_collection
+      collections:
+        - name: community.docker
+          version: ">=3.0.0"
+
     - name: Build Docker image for Next.js app
       community.docker.docker_image:
         name: "{{ image_name }}"
         build:
           path: "{{ app_path }}"
         source: build
+        pull: no
       register: build_result
 
-    - name: Stop existing container (if any)
+    - name: Stop existing container if running
       community.docker.docker_container:
         name: "{{ container_name }}"
         state: absent
@@ -46,5 +53,3 @@
         state: started
         ports:
           - "3000:{{ exposed_port }}"
-        working_dir: /app
-        command: ["npm", "run", "start"]
