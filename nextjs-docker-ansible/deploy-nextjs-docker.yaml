@@ -24,11 +24,10 @@
         state: started
         enabled: true
 
-    - name: Install community.docker collection if missing
-      ansible.builtin.meta: require_collection
+    - name: Require community.docker collection
+      meta: require_collection
       collections:
-        - name: community.docker
-          version: ">=3.0.0"
+        - community.docker
 
     - name: Build Docker image for Next.js app
       community.docker.docker_image:
@@ -51,5 +50,8 @@
         image: "{{ image_name }}"
         restart_policy: always
         state: started
-        ports:
+        published_ports:
           - "3000:{{ exposed_port }}"
+        # if needed, you can also add:
+        # env:
+        #   NODE_ENV: production
