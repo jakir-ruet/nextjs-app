@@ -1,6 +1,6 @@
 ---
 - name: Build and run Next.js app in Docker
-  hosts: docker
+  hosts: docker_host
   become: true
   vars:
     app_name: nextjs-app
