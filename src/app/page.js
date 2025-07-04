@@ -15,7 +15,7 @@ export default function Home() {
         />
         <ol>
           <li>
-            Welcome to <code>src/app/page.js</code>.
+            <h1>Welcome to</h1> <code>src/app/page.js</code>.
           </li>
           <li>For ultimate testing of CI/CD</li>
         </ol>
