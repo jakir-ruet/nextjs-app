@@ -1,57 +1,30 @@
 ---
-- name: Build and run Next.js app in Docker
-  hosts: docker_host
-  become: true
-  vars:
-    app_name: nextjs-app
-    app_path: /opt/docker
-    image_name: nextjs-app-image
-    container_name: nextjs-app-container
-    exposed_port: 3000
-
+- name: Build and run Next.js Docker image on remote Docker server
+  hosts: docker-server
+  become: yes
   tasks:
 
-    - name: Ensure Docker is installed
-      apt:
-        name: docker.io
-        state: present
-        update_cache: yes
-      when: ansible_os_family == "Debian"
+    - name: Copy Next.js app source to Docker server
+      synchronize:
+        src: "/opt/docker/nextjs-docker-ansible/.."
+        dest: /opt/mynext-app
+        delete: yes
+      delegate_to: localhost
 
-    - name: Ensure Docker service is running
-      systemd:
-        name: docker
-        state: started
-        enabled: true
-
-    - name: Require community.docker collection
-      meta: require_collection
-      collections:
-        - community.docker
-
-    - name: Build Docker image for Next.js app
+    - name: Build Docker image on remote Docker server
       community.docker.docker_image:
-        name: "{{ image_name }}"
-        build:
-          path: "{{ app_path }}"
+        name: nextjs-app
         source: build
-        pull: no
-      register: build_result
+        state: present
+        build:
+          path: /opt/mynext-app
+          dockerfile: Dockerfile
 
-    - name: Stop existing container if running
+    - name: Run Docker container
       community.docker.docker_container:
-        name: "{{ container_name }}"
-        state: absent
-      ignore_errors: true
-
-    - name: Run Next.js app container
-      community.docker.docker_container:
-        name: "{{ container_name }}"
-        image: "{{ image_name }}"
+        name: nextjs-app
+        image: nextjs-app:latest
+        published_ports:
+          - "3000:3000"
         restart_policy: always
         state: started
-        published_ports:
-          - "3000:{{ exposed_port }}"
-        # if needed, you can also add:
-        # env:
-        #   NODE_ENV: production
